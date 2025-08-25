@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A&M Storage - Upload para Google Drive</title>
+    <!-- Usando Tailwind CSS para um design limpo e moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilo customizado para a barra de progresso */
+        progress::-webkit-progress-bar {
+            background-color: #e0e0e0;
+            border-radius: 0.5rem;
+        }
+        progress::-webkit-progress-value {
+            background-color: #3b82f6;
+            border-radius: 0.5rem;
+            transition: width 0.4s ease;
+        }
+        progress::-moz-progress-bar {
+            background-color: #3b82f6;
+            border-radius: 0.5rem;
+            transition: width 0.4s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
+
+    <div class="bg-white w-full max-w-2xl p-8 rounded-xl shadow-lg m-4">
+        
+        <!-- Cabeçalho -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">A&M Storage</h1>
+            <p class="text-gray-500 mt-2">Envie seus arquivos com segurança para o nosso armazenamento na nuvem.</p>
+        </div>
+
+        <!-- Formulário de Upload -->
+        <form id="uploadForm" class="space-y-6">
+            <div>
+                <label for="fileInput" class="block text-sm font-medium text-gray-700 mb-2">Selecione o arquivo:</label>
+                <div class="flex items-center justify-center w-full">
+                    <label for="fileInput" class="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Clique para escolher</span> ou arraste e solte</p>
+                            <p id="fileName" class="text-xs text-gray-500">Nenhum arquivo selecionado</p>
+                        </div>
+                        <input id="fileInput" type="file" class="hidden" />
+                    </label>
+                </div> 
+            </div>
+            
+            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-300">
+                Enviar Arquivo
+            </button>
+        </form>
+
+        <!-- Seção de Progresso (aparece após o envio) -->
+        <div id="progressSection" class="hidden mt-6">
+            <div class="flex justify-between mb-1">
+                <span class="text-base font-medium text-blue-700">Progresso do Upload</span>
+                <span id="progressPercentage" class="text-sm font-medium text-blue-700">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-4">
+                <div id="progressBar" class="bg-blue-600 h-4 rounded-full" style="width: 0%"></div>
+            </div>
+            <div id="status" class="text-center mt-3 text-sm text-gray-600">Iniciando upload...</div>
+            <div id="fileSizeInfo" class="text-center mt-1 text-xs text-gray-500"></div>
+        </div>
+    </div>
+
+    <!-- Script do Cliente (Front-end) -->
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileName');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const statusDisplay = document.getElementById('status');
+        const fileSizeInfo = document.getElementById('fileSizeInfo');
+
+        // Atualiza o nome do arquivo na interface quando um é selecionado
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                fileNameDisplay.textContent = file.name;
+            } else {
+                fileNameDisplay.textContent = 'Nenhum arquivo selecionado';
+            }
+        });
+
+        // Lida com o envio do formulário
+        uploadForm.addEventListener('submit', (event) => {
+            event.preventDefault(); // Impede o comportamento padrão do formulário
+
+            const file = fileInput.files[0];
+            if (!file) {
+                statusDisplay.textContent = 'Por favor, selecione um arquivo primeiro.';
+                progressSection.classList.remove('hidden');
+                return;
+            }
+
+            // Prepara os dados para envio
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Mostra a seção de progresso e reseta os valores
+            progressSection.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressPercentage.textContent = '0%';
+            statusDisplay.textContent = 'Enviando...';
+            
+            // Cria a requisição AJAX (XMLHttpRequest) para monitorar o progresso
+            const xhr = new XMLHttpRequest();
+
+            // Evento que monitora o progresso do upload
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    progressPercentage.textContent = percentComplete + '%';
+                    
+                    // Formata o tamanho do arquivo para exibição
+                    const totalSize = (e.total / 1024 / 1024).toFixed(2); // em MB
+                    const loadedSize = (e.loaded / 1024 / 1024).toFixed(2); // em MB
+                    fileSizeInfo.textContent = `Enviado ${loadedSize} MB de ${totalSize} MB`;
+                }
+            });
+
+            // Evento que é acionado quando o upload é concluído
+            xhr.onload = () => {
+                if (xhr.status === 200) {
+                    statusDisplay.textContent = '✅ Sucesso! Arquivo enviado para o armazenamento.';
+                    progressBar.classList.remove('bg-blue-600');
+                    progressBar.classList.add('bg-green-500');
+                } else {
+                    statusDisplay.textContent = `❌ Erro no upload. Tente novamente. (Código: ${xhr.status})`;
+                     progressBar.classList.remove('bg-blue-600');
+                    progressBar.classList.add('bg-red-500');
+                }
+            };
+
+            // Evento para erros de rede
+            xhr.onerror = () => {
+                statusDisplay.textContent = '❌ Erro de conexão. Verifique sua rede e tente novamente.';
+                progressBar.classList.remove('bg-blue-600');
+                progressBar.classList.add('bg-red-500');
+            };
+            
+            // IMPORTANTE: Substitua a URL abaixo pela URL do seu servidor back-end
+            // Por exemplo: 'http://localhost:3000/upload' ou 'https://api.amstorage.com/upload'
+            xhr.open('POST', 'http://localhost:3000/upload', true);
+            xhr.send(formData);
+        });
+    </script>

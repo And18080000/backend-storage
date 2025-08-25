@@ -1,0 +1,6 @@
+# Dependencies
+/node_modules
+
+# Local Environment Variables
+.env
+am-storage-backend-d984768bf25d.json
