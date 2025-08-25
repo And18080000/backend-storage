@@ -148,9 +148,11 @@
                 progressBar.classList.add('bg-red-500');
             };
             
-            // IMPORTANTE: Substitua a URL abaixo pela URL do seu servidor back-end
-            // Por exemplo: 'http://localhost:3000/upload' ou 'https://api.amstorage.com/upload'
-            xhr.open('POST', 'http://localhost:3000/upload', true);
+            // CORREÇÃO: Usa um caminho relativo para a API, que funciona tanto localmente quanto na Vercel.
+            xhr.open('POST', '/api/upload', true);
             xhr.send(formData);
         });
     </script>
+    
+</body>
+</html>
